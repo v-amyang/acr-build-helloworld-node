@@ -1,0 +1,49 @@
+name: Trigger auto deployment for testgitrepo0707
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/testgitrepo0707-AutoDeployTrigger-8a183aba-2c92-428c-9a1c-a0195704fa7e.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.TESTGITREPO0707_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TESTGITREPO0707_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TESTGITREPO0707_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: amyregistyr.azurecr.io
+          registryUsername: ${{ secrets.TESTGITREPO0707_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.TESTGITREPO0707_REGISTRY_PASSWORD }}
+          containerAppName: testgitrepo0707
+          resourceGroup: cti-conenv-app0707
+          imageToBuild: amyregistyr.azurecr.io/testgitrepo0707:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
